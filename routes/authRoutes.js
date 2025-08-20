@@ -1,7 +1,13 @@
+// routes/authRoutes.js
 const express = require("express");
 const router = express.Router();
 const { register, login, verifyOTP } = require("../controllers/authController");
-const { body } = require("express-validator");
+const {
+  registerValidation,
+  loginValidation,
+  verifyOtpValidation,
+} = require("../validators/authValidator");
+
 /**
  * @swagger
  * tags:
@@ -21,86 +27,38 @@ const { body } = require("express-validator");
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - username
- *               - email
- *               - password
- *             properties:
- *               username:
- *                 type: string
- *                 example: johndoe
- *               email:
- *                 type: string
- *                 format: email
- *                 example: johndoe@example.com
- *               password:
- *                 type: string
- *                 format: password
- *                 example: Password123!
- *               role:
- *                 type: string
- *                 enum: [Admin, Editor, Viewer]
- *                 example: Viewer
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *           example:
+ *             username: johndoe
+ *             email: johndoe@example.com
+ *             password: Password123!
+ *             role: Viewer
  *     responses:
  *       201:
- *         description: User registered successfully.
+ *         description: User registered successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: User registered successfully.
- *                 token:
- *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *               $ref: '#/components/schemas/RegisterResponse'
+ *             example:
+ *               message: User registered successfully
+ *               token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *       400:
- *         description: Bad Request - Validation errors or duplicate entries.
+ *         description: Validation errors or duplicate entries
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: User with this email already exists.
- *                 errors:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       msg:
- *                         type: string
- *                         example: Password must be at least 6 characters long.
- *                       param:
- *                         type: string
- *                         example: password
- *                       location:
- *                         type: string
- *                         example: body
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: User with this email already exists.
+ *               errors:
+ *                 - msg: Password must be at least 6 characters long.
+ *                   param: password
+ *                   location: body
  *       500:
- *         description: Server error.
+ *         description: Server error
  */
-
-router.post(
-  "/register",
-  [
-    body("username")
-      .notEmpty()
-      .withMessage("Username is required.")
-      .isLength({ min: 3 })
-      .withMessage("Username must be at least 3 characters long."),
-    body("email")
-      .isEmail()
-      .withMessage("Please provide a valid email address."),
-    body("password")
-      .isLength({ min: 6 })
-      .withMessage("Password must be at least 6 characters long."),
-  ],
-  register
-);
+router.post("/register", registerValidation, register);
 
 /**
  * @swagger
@@ -114,57 +72,32 @@ router.post(
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: johndoe@example.com
- *               password:
- *                 type: string
- *                 format: password
- *                 example: Password123!
+ *             $ref: '#/components/schemas/LoginRequest'
+ *           example:
+ *             email: johndoe@example.com
+ *             password: Password123!
  *     responses:
  *       200:
- *         description: User logged in successfully.
+ *         description: User logged in successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: User logged in successfully.
- *                 token:
- *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *               $ref: '#/components/schemas/LoginResponse'
+ *             example:
+ *               message: User logged in successfully
+ *               token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *       400:
- *         description: Bad Request - Invalid credentials.
+ *         description: Invalid credentials
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Invalid email or password.
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: Invalid email or password
  *       500:
- *         description: Server error.
+ *         description: Server error
  */
-
-router.post(
-  "/login",
-  [
-    body("email")
-      .isEmail()
-      .withMessage("Please provide a valid email address."),
-    body("password").notEmpty().withMessage("Password is required."),
-  ],
-  login
-);
+router.post("/login", loginValidation, login);
 
 /**
  * @swagger
@@ -179,6 +112,9 @@ router.post(
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/VerifyOTPRequest'
+ *           example:
+ *             email: johndoe@example.com
+ *             otp: "123456"
  *     responses:
  *       200:
  *         description: OTP verified successfully
@@ -186,28 +122,19 @@ router.post(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/VerifyOTPResponse'
+ *             example:
+ *               message: OTP verified successfully
  *       400:
- *         description: Bad Request - Invalid OTP, expired OTP, or already verified
+ *         description: Invalid or expired OTP
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: OTP is invalid or expired
  *       500:
  *         description: Server error
  */
-router.post(
-  "/verify-otp",
-  [
-    body("email")
-      .isEmail()
-      .withMessage("Please provide a valid email address."),
-    body("otp")
-      .isLength({ min: 6, max: 6 })
-      .withMessage("OTP must be a 6-digit number.")
-      .isNumeric()
-      .withMessage("OTP must contain only numbers."),
-  ],
-  verifyOTP
-);
+router.post("/verify-otp", verifyOtpValidation, verifyOTP);
 
 module.exports = router;

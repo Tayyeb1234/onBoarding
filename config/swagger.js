@@ -5,10 +5,10 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Role-Based Authentication and Product Management API",
+      title: "Role-Based Authentication and User Management API",
       version: "1.0.0",
       description:
-        "API documentation for the Role-Based Authentication and Product Management System.",
+        "API documentation for the Role-Based Authentication and User Management System.",
     },
     servers: [
       {
