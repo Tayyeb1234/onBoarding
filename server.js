@@ -23,7 +23,7 @@ app.use("/api/users", userRoutes);
 
 app.get("/", (req, res) => {
   res.send(
-    "Welcome to the Role-Based Authentication and Product Management System API"
+    "Welcome to the Role-Based Authentication User Management System API"
   );
 });
 
@@ -42,4 +42,3 @@ process.on("uncaughtException", (error) => {
   console.log("error", error);
 });
 
-// console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
