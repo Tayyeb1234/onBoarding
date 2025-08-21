@@ -7,8 +7,13 @@ const {
   getUsers,
   updateUserRole,
   getUserById,
+  updateUser,
+  deleteUser
 } = require("../controllers/userController");
-const { body, param } = require("express-validator");
+const {
+  getUserByIdValidation,
+  updateUserRoleValidation,
+} = require("../validators/userValidator");
 
 /**
  * @swagger
@@ -27,24 +32,18 @@ const { body, param } = require("express-validator");
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: A list of users.
+ *         description: A list of users
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 users:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/UserListResponse'
  *       401:
- *         description: Unauthorized - Access token missing.
+ *         description: Unauthorized - Access token missing
  *       403:
- *         description: Forbidden - Insufficient permissions.
+ *         description: Forbidden - Insufficient permissions
  *       500:
- *         description: Server error.
+ *         description: Server error
  */
-
 router.get("/", authenticateToken, authorizeRoles("Admin"), getUsers);
 
 /**
@@ -64,32 +63,23 @@ router.get("/", authenticateToken, authorizeRoles("Admin"), getUsers);
  *         description: The user ID
  *     responses:
  *       200:
- *         description: User retrieved successfully.
+ *         description: User retrieved successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/UserResponse'
  *       400:
- *         description: Bad Request - Invalid user ID.
+ *         description: Invalid user ID
  *       401:
- *         description: Unauthorized - Access token missing or invalid.
+ *         description: Unauthorized
  *       403:
- *         description: Forbidden - Insufficient permissions.
+ *         description: Forbidden
  *       404:
- *         description: User not found.
+ *         description: User not found
  *       500:
- *         description: Server error.
+ *         description: Server error
  */
-
-router.get(
-  "/:id",
-  authenticateToken,
-  [param("id").isMongoId().withMessage("Invalid user ID.")],
-  getUserById
-);
+router.get("/:id", authenticateToken, getUserByIdValidation, getUserById);
 
 /**
  * @swagger
@@ -112,63 +102,84 @@ router.get(
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - role
- *             properties:
- *               role:
- *                 type: string
- *                 enum: [Admin, Editor, Viewer]
- *                 example: Editor
+ *             $ref: '#/components/schemas/UpdateUserRoleRequest'
  *     responses:
  *       200:
- *         description: User role updated successfully.
+ *         description: User role updated successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: User role updated successfully.
- *                 user:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                       example: 60d0fe4f5311236168a109ca
- *                     username:
- *                       type: string
- *                       example: johndoe
- *                     email:
- *                       type: string
- *                       example: johndoe@example.com
- *                     role:
- *                       type: string
- *                       example: Editor
+ *               $ref: '#/components/schemas/UpdateUserRoleResponse'
  *       400:
- *         description: Bad Request - Validation errors or attempting to downgrade own role.
+ *         description: Validation error or cannot downgrade own role
  *       401:
- *         description: Unauthorized - Access token missing or invalid.
+ *         description: Unauthorized
  *       403:
- *         description: Forbidden - Insufficient permissions.
+ *         description: Forbidden
  *       404:
- *         description: User not found.
+ *         description: User not found
  *       500:
- *         description: Server error.
+ *         description: Server error
  */
-
 router.patch(
   "/:id/role",
   authenticateToken,
   authorizeRoles("Admin"),
-  [
-    param("id").isMongoId().withMessage("Invalid user ID."),
-    body("role")
-      .isIn(["Admin", "Editor", "Viewer"])
-      .withMessage("Role must be one of Admin, Editor, or Viewer."),
-  ],
+  updateUserRoleValidation,
   updateUserRole
 );
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update a user
+ *     description: Update user details. Only self or admin can update.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             example:
+ *               username: "newusername"
+ *               email: "new@email.com"
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ */
+router.put("/:id", authenticateToken, updateUser);
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete a user
+ *     description: Only admins can delete users.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ */
+router.delete("/:id", authenticateToken, authorizeRoles("Admin"), deleteUser);
 
 module.exports = router;
