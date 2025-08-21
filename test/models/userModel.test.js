@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const { expect } = require("chai");
-const User = require("../models/User");
+const User = require("../../models/User");
 
 describe("User Model", () => {
   before(async () => {
@@ -32,7 +32,7 @@ describe("User Model", () => {
   it("should not save with invalid email", async () => {
     const user = new User({
       username: "johnny",
-      email: "invalidemail",
+      email: "invalidemail", "test": "mocha --timeout 10000",
       password: "123456"
     });
 
